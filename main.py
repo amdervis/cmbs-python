@@ -8,21 +8,23 @@ api_mfa = "https://pythontest2021.azurewebsites.net/api/Get2FACode"
 
 user = str(input("Enter your username: "))
 pwd = getpass.getpass("Enter your password: ")
-data = {"username": user, "password": pwd, "code": "string"}
+login_data = {"username": user, "password": pwd}
 
-res = requests.post(api_login, json=data)
-#print(res.json())
+res_login = requests.post(api_login, json=login_data)
+res_mfa = requests.post(api_mfa, json=login_data)
 
-# Check if the request was successful (status code 200)
-if res.status_code == 200:
-    # Parse the JSON content of the response
-    data = res.json()
-    print(data)
+res_login_json = res_login.json()
 
-    if data["success"] and data["is2FAEnabled"] == False:
-        print("Token: %s" % data["token"])
-
-elif res.status_code == 404:
-    print("Username or password is incorrect. Exiting.")
+if res_login.status_code == 404 and res_mfa.status_code == 404: 
+    print("Entered user does not exist or the password is incorrect.")
     exit()
 
+elif res_login.status_code == 200:
+    if res_login_json["success"] and res_login_json["is2FAEnabled"] == False:
+        print("2FA for this account is not enabled. \nToken: %s" % res_login_json["token"])
+        exit()
+    
+    elif res_login_json["success"] and res_login_json["is2FAEnabled"]:
+        res_mfa_body = res_mfa.content
+        print("2FA is enabled.\nToken: %s" % res_mfa_body)
+        token_input = input("Enter your token: ")
