@@ -11,11 +11,11 @@ pwd = getpass.getpass("Enter your password: ")
 login_data = {"username": user, "password": pwd}
 
 res_login = requests.post(api_login, json=login_data)
-res_mfa = requests.post(api_mfa, json=login_data)
+
 
 res_login_json = res_login.json()
 
-if res_login.status_code == 404 and res_mfa.status_code == 404: 
+if res_login.status_code == 404: 
     print("Entered user does not exist or the password is incorrect.")
     exit()
 
@@ -25,9 +25,13 @@ elif res_login.status_code == 200:
         exit()
     
     elif res_login_json["success"] and res_login_json["is2FAEnabled"]:
-        print(res_login_json)
+        res_mfa = requests.post(api_mfa, json=login_data)
         res_mfa_body = res_mfa.content
-        print("2FA is enabled.\nToken: %s" % res_mfa_body)
+        print("2FA is enabled.\nReceived Token: %s" % res_mfa_body)
         token_input = str(input("Enter your token: "))
 
-        print(requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)}).json())
+        token_auth = requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)}).json()
+        if token_auth["success"]:
+            print("-" * 60)
+            print("Token auth OK! \nYour token: %s" % token_auth["token"])
+            print("-" * 60)
