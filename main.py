@@ -25,6 +25,9 @@ elif res_login.status_code == 200:
         exit()
     
     elif res_login_json["success"] and res_login_json["is2FAEnabled"]:
+        print(res_login_json)
         res_mfa_body = res_mfa.content
         print("2FA is enabled.\nToken: %s" % res_mfa_body)
-        token_input = input("Enter your token: ")
+        token_input = str(input("Enter your token: "))
+
+        print(requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)}).json())
