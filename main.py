@@ -5,14 +5,11 @@ import getpass
 api_login = "https://pythontest2021.azurewebsites.net/api/Login"
 api_mfa = "https://pythontest2021.azurewebsites.net/api/Get2FACode"
 
-
 user = str(input("Enter your username: "))
 pwd = getpass.getpass("Enter your password: ")
 login_data = {"username": user, "password": pwd}
 
 res_login = requests.post(api_login, json=login_data)
-
-
 res_login_json = res_login.json()
 
 if res_login.status_code == 404: 
@@ -32,6 +29,6 @@ elif res_login.status_code == 200:
 
         token_auth = requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)}).json()
         if token_auth["success"]:
-            print("-" * 60)
+            print("-" * 47)
             print("Token auth OK! \nYour token: %s" % token_auth["token"])
-            print("-" * 60)
+            print("-" * 47)
