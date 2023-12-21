@@ -27,8 +27,14 @@ elif res_login.status_code == 200:
         print("2FA is enabled.\nReceived Token: %s" % res_mfa_body)
         token_input = str(input("Enter your token: "))
 
-        token_auth = requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)}).json()
-        if token_auth["success"]:
+        token_auth = requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)})
+        token_auth_json = token_auth.json()
+        
+        if token_auth.status_code != 200:
             print("-" * 47)
-            print("Token auth OK! \nYour token: %s" % token_auth["token"])
+            print("Token auth FAILED!")
+            print("-" * 47)
+        else:
+            print("-" * 47)
+            print("Token auth OK! \nYour token: %s" % token_auth_json["token"])
             print("-" * 47)
