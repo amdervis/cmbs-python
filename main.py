@@ -1,40 +1,55 @@
-# Install and import request module 
 import requests
 import getpass
 
-api_login = "https://pythontest2021.azurewebsites.net/api/Login"
-api_mfa = "https://pythontest2021.azurewebsites.net/api/Get2FACode"
+API_LOGIN = "https://pythontest2021.azurewebsites.net/api/Login"
+API_MFA = "https://pythontest2021.azurewebsites.net/api/Get2FACode"
 
-user = str(input("Enter your username: "))
-pwd = getpass.getpass("Enter your password: ")
-login_data = {"username": user, "password": pwd}
+def user_input(prompt):
+    return input(prompt).strip()
 
-res_login = requests.post(api_login, json=login_data)
-res_login_json = res_login.json()
+def login(username, password):
+    login_data = {"username": username, "password": password}
+    response = requests.post(API_LOGIN, json=login_data)
 
-if res_login.status_code == 404: 
-    print("Entered user does not exist or the password is incorrect.")
-    exit()
-
-elif res_login.status_code == 200:
-    if res_login_json["success"] and res_login_json["is2FAEnabled"] == False:
-        print("2FA for this account is not enabled. \nToken: %s" % res_login_json["token"])
+    if response.status_code == 404:
+        print("Entered user does not exist or the password is incorrect.")
         exit()
-    
-    elif res_login_json["success"] and res_login_json["is2FAEnabled"]:
-        res_mfa = requests.post(api_mfa, json=login_data)
-        res_mfa_body = res_mfa.content
-        print("2FA is enabled.\nReceived Token: %s" % res_mfa_body)
-        token_input = str(input("Enter your token: "))
+    elif response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Error during login: {response.status_code}")
+        exit()
 
-        token_auth = requests.post(api_login, json={"username": user, "password": pwd, "code": str(token_input)})
-        token_auth_json = token_auth.json()
-        
-        if token_auth.status_code != 200:
-            print("-" * 47)
-            print("Token auth FAILED!")
-            print("-" * 47)
-        else:
-            print("-" * 47)
-            print("Token auth OK! \nYour token: %s" % token_auth_json["token"])
-            print("-" * 47)
+def handle_2fa(username, password):
+    mfa_data = {"username": username, "password": password}
+    response = requests.post(API_MFA, json=mfa_data)
+    
+    if response.status_code != 200:
+        print(f"Error during 2FA request: {response.status_code}")
+        exit()
+
+    print("2FA is enabled.\nReceived Token:", response.text)
+    token_input = user_input("Enter your token: ")
+
+    token_auth_data = {"username": username, "password": password, "code": token_input}
+    response = requests.post(API_LOGIN, json=token_auth_data)
+
+    if response.status_code != 200:
+        print("-" * 47)
+        print("Token auth FAILED!")
+        print("-" * 47)
+    else:
+        print("-" * 47)
+        print("Token auth OK! \nYour token:", response.json()["token"])
+        print("-" * 47)
+
+if __name__ == "__main__":
+    username = user_input("Enter your username: ")
+    password = getpass.getpass("Enter your password: ")
+
+    login_result = login(username, password)
+
+    if login_result["success"] and not login_result["is2FAEnabled"]:
+        print("2FA for this account is not enabled.\nToken:", login_result["token"])
+    elif login_result["success"] and login_result["is2FAEnabled"]:
+        handle_2fa(username, password)
